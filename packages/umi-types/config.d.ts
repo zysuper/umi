@@ -4,10 +4,11 @@ import { ExternalsElement, Condition } from 'webpack';
 export type IPlugin<T = any> = string | [string, T];
 
 export interface IRoute {
-  path: string;
-  component: string;
+  path?: string;
+  component?: string;
   routes?: IRoute[];
   Routes?: string[];
+  redirect?: string;
   [key: string]: any;
 }
 

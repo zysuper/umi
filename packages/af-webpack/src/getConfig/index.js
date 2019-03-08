@@ -48,7 +48,6 @@ export default function(opts) {
     .modules.add('node_modules')
     .add(join(__dirname, '../../node_modules'))
     // Fix yarn global resolve problem
-    // ref: https://github.com/umijs/umi/issues/872
     .add(join(__dirname, '../../../'))
     .end()
     .extensions.merge([
@@ -199,7 +198,7 @@ export default function(opts) {
   // suport es5ImcompatibleVersions
   const extraBabelIncludes = opts.extraBabelIncludes || [];
   extraBabelIncludes.push(a => {
-    if (a.indexOf('node_modules') === -1) return false;
+    if (!a.includes('node_modules')) return false;
     const pkgPath = getPkgPath(a);
     return shouldTransform(pkgPath);
   });
@@ -264,15 +263,18 @@ export default function(opts) {
   const NO_PROGRESS = process.env.PROGRESS === 'none';
   if (!process.env.__FROM_UMI_TEST) {
     if (!process.env.CI && !NO_PROGRESS) {
-      webpackConfig.plugin('progress')
-        .use(require('webpackbar'), [
-          {
-            color: 'green',
-            reporters: ['fancy'],
-          },
-        ]);
-    } else {
-      console.log('Building ...');
+      if (process.platform === 'win32') {
+        webpackConfig.plugin('progress')
+          .use(require('progress-bar-webpack-plugin'));
+      } else {
+        webpackConfig.plugin('progress')
+          .use(require('webpackbar'), [
+            {
+              color: 'green',
+              reporters: ['fancy'],
+            },
+          ]);
+      }
     }
   }
 

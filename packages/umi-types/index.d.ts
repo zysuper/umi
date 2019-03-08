@@ -1,3 +1,4 @@
+import 'cheerio';
 import IConfig, { IPlugin, IAFWebpackConfig, IRoute } from './config';
 import { Stats, Configuration } from 'webpack';
 
@@ -8,7 +9,7 @@ import { Stats, Configuration } from 'webpack';
 declare enum API_TYPE {
   ADD,
   MODIFY,
-  EVENT
+  EVENT,
 }
 
 export { IConfig, IPlugin, IRoute };
@@ -25,6 +26,10 @@ export interface IRegisterPluginOpts {
 
 interface IRegisterPlugin {
   (plugin: IRegisterPluginOpts): void;
+}
+
+interface IRegister {
+  (hook: string, handler: Function): void;
 }
 
 export interface IPluginMethodOpts {
@@ -163,12 +168,20 @@ interface IBeforeDevServer {
   (fn: IBeforeDevServerFunc): void;
 }
 
+interface IBeforeDevServerAsync {
+  (fn: IBeforeDevServerFunc): Promise<any>;
+}
+
 interface IAfterDevServer {
   (fn: IAfterDevServerFunc): void;
 }
 
 interface IOnStart {
   (fn: () => void): void;
+}
+
+interface IEventAsync {
+  (fn: () => void): Promise<any>;
 }
 
 export interface IOnDevCompileDoneFunc {
@@ -257,22 +270,6 @@ interface IGetChunkPath {
   (fileName: string): string | null;
 }
 
-interface CheerioStatic extends CheerioSelector {
-  // @types/cheerio/index.d.ts
-  xml(): string;
-  root(): Cheerio;
-  contains(container: CheerioElement, contained: CheerioElement): boolean;
-  parseHTML(
-    data: string,
-    context?: Document,
-    keepScripts?: boolean
-  ): Document[];
-  html(options?: CheerioOptionsInterface): string;
-  html(selector: string, options?: CheerioOptionsInterface): string;
-  html(element: Cheerio, options?: CheerioOptionsInterface): string;
-  html(element: CheerioElement, options?: CheerioOptionsInterface): string;
-}
-
 interface IModifyHTMLWithASTArgs {
   route: IRoute;
   getChunkPath: IGetChunkPath;
@@ -303,7 +300,11 @@ interface IModifyRouteComponentArgs {
 
 interface IPkg {
   name: string;
+  version: string;
   dependencies: {
+    [prop: string]: string;
+  };
+  devDependencies: {
     [prop: string]: string;
   };
 }
@@ -335,6 +336,7 @@ export interface IApi {
    * System level API
    * https://umijs.org/plugin/develop.html#system-level-api
    */
+  register: IRegister;
   registerPlugin: IRegisterPlugin;
   registerMethod: IRegisterMethod;
   applyPlugins: IApplyPlugins;
@@ -372,8 +374,10 @@ export interface IApi {
    * https://umijs.org/plugin/develop.html#event-class-api
    */
   beforeDevServer: IBeforeDevServer;
+  _beforeDevServerAsync: IBeforeDevServerAsync;
   afterDevServer: IAfterDevServer;
   onStart: IOnStart;
+  onStartAsync: IEventAsync;
   onDevCompileDone: IOnDevCompileDone;
   onOptionChange: IOnOptionChange;
   onBuildSuccess: IOnBuildSuccess;
